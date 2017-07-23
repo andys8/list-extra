@@ -339,14 +339,14 @@ dropWhile predicate list =
 -}
 unique : List comparable -> List comparable
 unique list =
-    uniqueHelp identity Set.empty list []
+    uniqueHelp identity Set.empty list
 
 
 {-| Drop duplicates where what is considered to be a duplicate is the result of first applying the supplied function to the elements of the list.
 -}
 uniqueBy : (a -> comparable) -> List a -> List a
 uniqueBy f list =
-    uniqueHelp f Set.empty list []
+    uniqueHelp f Set.empty list
 
 
 {-| Indicate if list has duplicate values.
@@ -366,21 +366,22 @@ allDifferentBy f list =
     List.length list == List.length (uniqueBy f list)
 
 
-uniqueHelp : (a -> comparable) -> Set comparable -> List a -> List a -> List a
-uniqueHelp f existing remaining accumulator =
-    case remaining of
-        [] ->
-            List.reverse accumulator
-
-        first :: rest ->
+uniqueHelp : (a -> comparable) -> Set comparable -> List a -> List a
+uniqueHelp f existing list =
+    let
+        foldFn : a -> ( List a, Set comparable ) -> ( List a, Set comparable )
+        foldFn nextElement ( currentList, currentSet ) =
             let
                 computedFirst =
-                    f first
+                    f nextElement
             in
-                if Set.member computedFirst existing then
-                    uniqueHelp f existing rest accumulator
+                if Set.member computedFirst currentSet then
+                    ( currentList, currentSet )
                 else
-                    uniqueHelp f (Set.insert computedFirst existing) rest (first :: accumulator)
+                    ( nextElement :: currentList, Set.insert computedFirst currentSet )
+    in
+        List.foldr foldFn ( [], Set.empty ) list
+            |> Tuple.first
 
 
 {-| Map functions taking multiple arguments over multiple lists. Each list should be of the same length.
